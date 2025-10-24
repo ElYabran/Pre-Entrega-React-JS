@@ -1,0 +1,41 @@
+.itemdetail-loading {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.itemdetail-loading .loading-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.itemdetail-loading .loading-text {
+    font-size: 1.3rem;
+}
+
+.itemdetail-error-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: 60vh;
+}
+
+.itemdetail-error {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.itemdetail-error .error-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.itemdetail-error .error-text {
+    margin: 0;
+    font-weight: 500;
+}

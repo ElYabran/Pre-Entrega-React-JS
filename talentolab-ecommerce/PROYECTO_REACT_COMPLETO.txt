@@ -1,0 +1,3634 @@
+PROYECTO REACT - EXPORTACIÓN
+=============================
+
+Generado: 10/23/2025, 9:52:42 PM
+
+INFORMACIÓN DEL PROYECTO:
+-------------------------
+Nombre: talentolab-ecommerce
+Versión: 0.0.0
+
+SCRIPTS DISPONIBLES:
+  dev: vite
+  build: vite build
+  lint: eslint .
+  preview: vite preview
+
+DEPENDENCIAS PRINCIPALES:
+  📦 react
+  📦 react-dom
+  📦 react-router-dom
+
+
+============================================================
+📄 src/main.jsx
+============================================================
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
+)
+
+============================================================
+📄 src/App.jsx
+============================================================
+
+// 📄 src/App.jsx - REEMPLAZAR TODO
+import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { CarritoProvider } from './context/CarritoContext';
+import Nav from './components/Nav/Nav';
+import Footer from './components/layout/Footer'; // ✅ Importar el nuevo Footer
+import ItemListContainer from './components/ItemListContainer/ItemListContainer';
+import ItemDetailContainer from './components/ItemDetailContainer/ItemDetailContainer';
+import Carrito from './pages/Carrito/Carrito';
+import Login from './pages/Login/Login';
+import Admin from './pages/Admin/Admin';
+import RutaProtegida from './components/RutaProtegida/RutaProtegida';
+import './App.css';
+
+// NUEVA PALETA DE COLORES MODERNA
+export const COLOR_ACCENT = '#7B61FF';
+export const COLOR_ACCENT_HOVER = '#6D4EFF';
+export const COLOR_PRIMARY_DARK = '#0A0A0A';
+export const COLOR_SECONDARY_DARK = '#1A1A1A';
+export const COLOR_CARD_BG = '#1E1E1E';
+export const COLOR_TEXT_LIGHT = '#FFFFFF';
+export const COLOR_SUBTLE_TEXT = 'rgba(255, 255, 255, 0.7)';
+export const COLOR_SUCCESS = '#00D4AA';
+export const COLOR_WARNING = '#FFB800';
+export const COLOR_ERROR = '#FF4757';
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = (estado) => {
+    setIsAuthenticated(estado);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
+  return (
+    <CarritoProvider>
+      <div className="app">
+        <Nav isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+        
+        <main className="main-content">
+          <Routes>
+            {/* PÁGINA DE INICIO AHORA ES PRODUCTOS */}
+            <Route path="/" element={<ItemListContainer />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/productos" element={<ItemListContainer />} />
+            <Route path="/productos/:id" element={<ItemDetailContainer />} />
+            <Route path="/carrito" element={
+              <RutaProtegida isAuthenticated={isAuthenticated}>
+                <Carrito />
+              </RutaProtegida>
+            } />
+            <Route path="/admin" element={
+              <RutaProtegida isAuthenticated={isAuthenticated}>
+                <Admin />
+              </RutaProtegida>
+            } />
+          </Routes>
+        </main>
+
+        {/* ✅ REEMPLAZAR EL FOOTER SIMPLE POR EL COMPONENTE */}
+        <Footer />
+      </div>
+    </CarritoProvider>
+  );
+}
+
+export default App;
+
+============================================================
+📄 src/context/CarritoContext.jsx
+============================================================
+
+import { createContext, useContext, useState } from 'react';
+
+// Crear el contexto
+export const CarritoContext = createContext();
+
+// Proveedor del contexto
+export function CarritoProvider({ children }) {
+    const [carrito, setCarrito] = useState([]);
+
+    // Agregar producto al carrito - CORREGIDO: evita duplicados exactos
+    const agregarAlCarrito = (producto) => {
+        // Agregar ID único temporal para evitar problemas de duplicación
+        const productoConId = {
+            ...producto,
+            carritoId: Date.now() + Math.random() // ID único temporal
+        };
+        setCarrito([...carrito, productoConId]);
+    };
+
+    // Vaciar carrito
+    const vaciarCarrito = () => {
+        setCarrito([]);
+    };
+
+    // Eliminar un producto específico del carrito (por carritoId)
+    const eliminarDelCarrito = (carritoId) => {
+        const nuevoCarrito = carrito.filter(item => item.carritoId !== carritoId);
+        setCarrito(nuevoCarrito);
+    };
+
+    // Calcular total
+    const calcularTotal = () => {
+        return carrito.reduce((total, producto) => total + producto.precio, 0);
+    };
+
+    // Obtener cantidad de items únicos
+    const obtenerCantidadItems = () => {
+        return carrito.length;
+    };
+
+    const value = {
+        carrito,
+        agregarAlCarrito,
+        vaciarCarrito,
+        eliminarDelCarrito,
+        calcularTotal,
+        obtenerCantidadItems
+    };
+
+    return (
+        <CarritoContext.Provider value={value}>
+            {children}
+        </CarritoContext.Provider>
+    );
+}
+
+// Hook personalizado para usar el contexto
+export function useCarrito() {
+    const context = useContext(CarritoContext);
+    if (!context) {
+        // Lanzar un error si el hook se usa fuera del proveedor
+        throw new Error('useCarrito debe usarse dentro de CarritoProvider');
+    }
+    return context;
+}
+
+============================================================
+📄 src/components/layout/Header.jsx
+============================================================
+
+// Definiciones de colores
+const COLOR_ACCENT = '#00ADB5';         // Verde Cian
+const COLOR_SECONDARY_DARK = '#393E46'; // Gris oscuro para componentes
+const COLOR_PRIMARY_DARK = '#222831';   // Gris muy oscuro
+
+function Header() {
+    return (
+        <header style={{
+            // Usamos el color principal oscuro para el fondo (se fusiona con el Nav)
+            backgroundColor: COLOR_PRIMARY_DARK, 
+            color: 'white',
+            padding: '1.5rem 2rem 0.5rem 2rem', // Menos padding inferior
+            textAlign: 'center',
+            // Sombra sutil pero visible
+            boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+            width: '100%',
+            margin: 0,
+            // Quitamos el borde, ya que el Nav tendrá su propio separador visual
+            borderBottom: 'none' 
+        }}>
+            <h1 style={{ 
+                margin: 0, 
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: COLOR_ACCENT, // Título en color de acento
+                textShadow: '0 0 5px rgba(0, 173, 181, 0.4)'
+            }}>
+                💻 TalentoLab Store
+            </h1>
+            <p style={{ 
+                margin: '0.3rem 0 0.5rem 0', // Menos margen superior
+                opacity: 0.8,
+                fontSize: '0.9rem',
+                fontWeight: '300',
+                color: '#AAAAAA'
+            }}>
+                Tecnología que ilumina tu futuro
+            </p>
+        </header>
+    );
+}
+
+export default Header;
+
+============================================================
+📄 src/components/layout/Footer.jsx
+============================================================
+
+import { Link } from 'react-router-dom';
+import './Footer.css';
+
+function Footer() {
+    const currentYear = new Date().getFullYear();
+
+    return (
+        <footer className="footer">
+            <div className="footer-container">
+                {/* Sección principal */}
+                <div className="footer-main">
+                    <div className="footer-brand">
+                        <div className="footer-logo">
+                            <span className="logo-icon">TL</span>
+                            <div className="logo-text">
+                                <h3>TalentoLab Store</h3>
+                                <p>Tecnología de Vanguardia</p>
+                            </div>
+                        </div>
+                        <p className="footer-description">
+                            Tu destino confiable para tecnología de última generación y accesorios premium.
+                        </p>
+                    </div>
+
+                    <div className="footer-links">
+                        <div className="footer-section">
+                            <h4>Explorar</h4>
+                            <Link to="/?categoria=tecnologia" className="footer-link">Lo Último!</Link>
+                            <Link to="/?categoria=accesorios" className="footer-link">Accesorios</Link>
+                            <Link to="/?categoria=audio" className="footer-link">Audio</Link>
+                            <Link to="/?categoria=perifericos" className="footer-link">Gaming</Link>
+                        </div>
+
+                        <div className="footer-section">
+                            <h4>Cuenta</h4>
+                            <Link to="/login" className="footer-link">Ingresar</Link>
+                            <Link to="/carrito" className="footer-link">Carrito</Link>
+                        </div>
+
+                        <div className="footer-section">
+                            <h4>Soporte</h4>
+                            <span className="footer-link">Contacto</span>
+                            <span className="footer-link">FAQ</span>
+                            <span className="footer-link">Términos</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Línea separadora */}
+                <div className="footer-divider"></div>
+
+                {/* Sección inferior con información personal */}
+                <div className="footer-bottom">
+                    <div className="footer-info">
+                        <div className="project-info">
+                            <p className="copyright">
+                                © {currentYear} TalentoLab Store. Todos los derechos reservados.
+                            </p>
+                            <p className="project-details">
+                                Proyecto desarrollado por <strong>Brian Pitz</strong> | 
+                                E-commerce React con Context API
+                            </p>
+                        </div>
+                        
+                        <div className="tech-stack">
+                            <span className="tech-item">React</span>
+                            <span className="tech-item">Vite</span>
+                            <span className="tech-item">Context API</span>
+                            <span className="tech-item">CSS3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+}
+
+export default Footer;
+
+============================================================
+📄 src/components/layout/Main.jsx
+============================================================
+
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>
+);
+
+============================================================
+📄 src/App.css
+============================================================
+
+/* 📄 src/App.css - REEMPLAZAR TODO EL CONTENIDO */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at top, #1A1A1A 0%, #0A0A0A 100%);
+  position: relative;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(123, 97, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 212, 170, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.main-content {
+  flex: 1;
+  padding: 0;
+}
+
+.footer {
+  background: rgba(26, 26, 26, 0.9);
+  backdrop-filter: blur(20px);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7B61FF 0%, #6D4EFF 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6D4EFF 0%, #5D3EFF 100%);
+}
+
+/* Efectos globales */
+.glass-effect {
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #7B61FF 0%, #00D4AA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading y Estados */
+.loading-container, .itemdetail-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loading-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: spin 1.5s linear infinite;
+}
+
+.loading-text {
+  font-size: 1.3rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container, .itemdetail-error-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 60vh;
+}
+
+.error-container .itemdetail-error {
+  background: rgba(255, 71, 87, 0.1);
+  color: #FF4757;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.error-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-text {
+  margin: 0;
+  font-weight: 500;
+}
+
+.no-products-container {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(30, 30, 30, 0.5);
+  border-radius: 20px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.no-products-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.no-products-title {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.no-products-text {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Botones modernos y consistentes */
+.btn-modern {
+  background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 20px rgba(123, 97, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-modern:hover::before {
+  left: 100%;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(123, 97, 255, 0.5);
+}
+
+.btn-modern:active {
+  transform: translateY(0);
+}
+
+/* Variantes de botones */
+.btn-secondary {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.3);
+}
+
+.btn-success:hover {
+  box-shadow: 0 10px 30px rgba(0, 212, 170, 0.5);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #FFB800 0%, #FFA500 100%);
+  box-shadow: 0 6px 20px rgba(255, 184, 0, 0.3);
+}
+
+.btn-warning:hover {
+  box-shadow: 0 10px 30px rgba(255, 184, 0, 0.5);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 10px 30px rgba(255, 71, 87, 0.5);
+}
+
+/* Tamaños de botones */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+--------------------------------------------------
+📄 src\App.css
+--------------------------------------------------
+
+/* 📄 src/App.css - REEMPLAZAR TODO EL CONTENIDO */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background-color: #0A0A0A;
+  color: #FFFFFF;
+  font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  overflow-x: hidden;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: radial-gradient(ellipse at top, #1A1A1A 0%, #0A0A0A 100%);
+  position: relative;
+}
+
+.app::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: 
+    radial-gradient(circle at 20% 80%, rgba(123, 97, 255, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(0, 212, 170, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.main-content {
+  flex: 1;
+  padding: 0;
+}
+
+.footer {
+  background: rgba(26, 26, 26, 0.9);
+  backdrop-filter: blur(20px);
+  color: rgba(255, 255, 255, 0.7);
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-top: auto;
+}
+
+/* Scrollbar personalizado */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1A1A1A;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #7B61FF 0%, #6D4EFF 100%);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #6D4EFF 0%, #5D3EFF 100%);
+}
+
+/* Efectos globales */
+.glass-effect {
+  background: rgba(30, 30, 30, 0.7);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #7B61FF 0%, #00D4AA 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading y Estados */
+.loading-container, .itemdetail-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.loading-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: spin 1.5s linear infinite;
+}
+
+.loading-text {
+  font-size: 1.3rem;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.error-container, .itemdetail-error-container {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 2rem 1rem;
+  min-height: 60vh;
+}
+
+.error-container .itemdetail-error {
+  background: rgba(255, 71, 87, 0.1);
+  color: #FF4757;
+  padding: 1.5rem 2rem;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 71, 87, 0.3);
+  text-align: center;
+  backdrop-filter: blur(10px);
+}
+
+.error-icon {
+  font-size: 2rem;
+  margin-bottom: 0.5rem;
+}
+
+.error-text {
+  margin: 0;
+  font-weight: 500;
+}
+
+.no-products-container {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: rgba(30, 30, 30, 0.5);
+  border-radius: 20px;
+  margin: 2rem auto;
+  max-width: 600px;
+}
+
+.no-products-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+}
+
+.no-products-title {
+  color: rgba(255, 255, 255, 0.9);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+}
+
+.no-products-text {
+  color: rgba(255, 255, 255, 0.7);
+  margin: 0;
+}
+
+/* Botones modernos y consistentes */
+.btn-modern {
+  background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.9rem;
+  box-shadow: 0 6px 20px rgba(123, 97, 255, 0.3);
+  position: relative;
+  overflow: hidden;
+  text-decoration: none;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-modern::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-modern:hover::before {
+  left: 100%;
+}
+
+.btn-modern:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 30px rgba(123, 97, 255, 0.5);
+}
+
+.btn-modern:active {
+  transform: translateY(0);
+}
+
+/* Variantes de botones */
+.btn-secondary {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+  color: #FFFFFF;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.btn-secondary:hover {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+  border-color: rgba(255, 255, 255, 0.3);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.btn-success {
+  background: linear-gradient(135deg, #00D4AA 0%, #00B894 100%);
+  box-shadow: 0 6px 20px rgba(0, 212, 170, 0.3);
+}
+
+.btn-success:hover {
+  box-shadow: 0 10px 30px rgba(0, 212, 170, 0.5);
+}
+
+.btn-warning {
+  background: linear-gradient(135deg, #FFB800 0%, #FFA500 100%);
+  box-shadow: 0 6px 20px rgba(255, 184, 0, 0.3);
+}
+
+.btn-warning:hover {
+  box-shadow: 0 10px 30px rgba(255, 184, 0, 0.5);
+}
+
+.btn-danger {
+  background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+  box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);
+}
+
+.btn-danger:hover {
+  box-shadow: 0 10px 30px rgba(255, 71, 87, 0.5);
+}
+
+/* Tamaños de botones */
+.btn-sm {
+  padding: 0.5rem 1rem;
+  font-size: 0.8rem;
+}
+
+.btn-lg {
+  padding: 1rem 2rem;
+  font-size: 1.1rem;
+}
+
+.btn-full {
+  width: 100%;
+}
+
+--------------------------------------------------
+📄 src\App.jsx
+--------------------------------------------------
+
+// 📄 src/App.jsx - REEMPLAZAR TODO
+import { useState } from 'react';
+import { Routes, Route } from 'react-router-dom';
+import { CarritoProvider } from './context/CarritoContext';
+import Nav from './components/Nav/Nav';
+import Footer from './components/layout/Footer'; // ✅ Importar el nuevo Footer
+import ItemListContainer from './components/ItemListContainer/ItemListContainer';
+import ItemDetailContainer from './components/ItemDetailContainer/ItemDetailContainer';
+import Carrito from './pages/Carrito/Carrito';
+import Login from './pages/Login/Login';
+import Admin from './pages/Admin/Admin';
+import RutaProtegida from './components/RutaProtegida/RutaProtegida';
+import './App.css';
+
+// NUEVA PALETA DE COLORES MODERNA
+export const COLOR_ACCENT = '#7B61FF';
+export const COLOR_ACCENT_HOVER = '#6D4EFF';
+export const COLOR_PRIMARY_DARK = '#0A0A0A';
+export const COLOR_SECONDARY_DARK = '#1A1A1A';
+export const COLOR_CARD_BG = '#1E1E1E';
+export const COLOR_TEXT_LIGHT = '#FFFFFF';
+export const COLOR_SUBTLE_TEXT = 'rgba(255, 255, 255, 0.7)';
+export const COLOR_SUCCESS = '#00D4AA';
+export const COLOR_WARNING = '#FFB800';
+export const COLOR_ERROR = '#FF4757';
+
+function App() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
+  const handleLogin = (estado) => {
+    setIsAuthenticated(estado);
+  };
+
+  const handleLogout = () => {
+    setIsAuthenticated(false);
+  };
+
+  return (
+    <CarritoProvider>
+      <div className="app">
+        <Nav isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+        
+        <main className="main-content">
+          <Routes>
+            {/* PÁGINA DE INICIO AHORA ES PRODUCTOS */}
+            <Route path="/" element={<ItemListContainer />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/productos" element={<ItemListContainer />} />
+            <Route path="/productos/:id" element={<ItemDetailContainer />} />
+            <Route path="/carrito" element={
+              <RutaProtegida isAuthenticated={isAuthenticated}>
+                <Carrito />
+              </RutaProtegida>
+            } />
+            <Route path="/admin" element={
+              <RutaProtegida isAuthenticated={isAuthenticated}>
+                <Admin />
+              </RutaProtegida>
+            } />
+          </Routes>
+        </main>
+
+        {/* ✅ REEMPLAZAR EL FOOTER SIMPLE POR EL COMPONENTE */}
+        <Footer />
+      </div>
+    </CarritoProvider>
+  );
+}
+
+export default App;
+
+--------------------------------------------------
+📄 src\components\Item\Item.css
+--------------------------------------------------
+
+/* 📄 src/components/Item/Item.css - REEMPLAZAR TODO EL CONTENIDO */
+.item-card {
+    width: 350px;
+    margin: 20px auto;
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(26, 26, 26, 0.9));
+    border-radius: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    box-shadow: 
+        0 8px 32px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.item-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, transparent);
+}
+
+.item-card:hover {
+    transform: translateY(-10px) scale(1.02);
+    box-shadow: 
+        0 20px 40px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(123, 97, 255, 0.2);
+    border-color: rgba(123, 97, 255, 0.3);
+}
+
+.item-image {
+    width: 100%;
+    height: 200px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.1), rgba(0, 212, 170, 0.05));
+    border-radius: 20px 20px 0 0;
+    overflow: hidden;
+    position: relative;
+}
+
+.item-image::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.item-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.item-card:hover .item-img {
+    transform: scale(1.1);
+}
+
+.item-category {
+    position: absolute;
+    top: 1rem;
+    left: 1rem;
+    background: linear-gradient(135deg, #7B61FF, #6D4EFF);
+    color: white;
+    padding: 0.3rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    z-index: 2;
+    box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
+}
+
+.card-container {
+    padding: 1.5rem;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.item-title {
+    color: #FFFFFF;
+    margin-bottom: 0.5rem;
+    font-size: 1.3rem;
+    font-weight: 700;
+    line-height: 1.3;
+}
+
+.item-description {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    flex: 1;
+}
+
+.item-price {
+    color: #7B61FF;
+    font-size: 1.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+}
+
+.item-button {
+    background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(123, 97, 255, 0.3);
+    position: relative;
+    overflow: hidden;
+}
+
+.item-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.5);
+}
+
+.item-button:active {
+    transform: translateY(0);
+}
+
+--------------------------------------------------
+📄 src\components\Item\Item.jsx
+--------------------------------------------------
+
+import { useNavigate } from 'react-router-dom';
+import { useCarrito } from '../../context/CarritoContext';
+import './Item.css';
+
+function Item({ producto }) {
+    const { agregarAlCarrito } = useCarrito();
+    const navigate = useNavigate();
+
+    const manejarAgregarAlCarrito = (e) => {
+        e.stopPropagation();
+        e.preventDefault();
+        agregarAlCarrito(producto);
+        alert(`✅ ${producto.nombre} agregado al carrito!`);
+    };
+
+    const manejarClickCard = () => {
+        navigate(`/productos/${producto.id}`);
+    };
+
+    const categoriaNombres = {
+        tecnologia: 'Lo Último!',
+        accesorios: 'Accesorios',
+        audio: 'Audio',
+        perifericos: 'Periféricos'
+    };
+
+    return (
+        <div 
+            className="item-card"
+            onClick={manejarClickCard}
+        >
+            {/* Badge de categoría */}
+            {producto.categoria && (
+                <span className="item-category">
+                    {categoriaNombres[producto.categoria] || producto.categoria}
+                </span>
+            )}
+            
+            <div className="item-image">
+                <img 
+                    src={producto.imagen} 
+                    alt={producto.nombre}
+                    className="item-img"
+                />
+            </div>
+            
+            <div className="card-container">
+                <h3 className="item-title">
+                    {producto.nombre}
+                </h3>
+
+                {producto.descripcion && (
+                    <p className="item-description">
+                        {producto.descripcion.length > 100 
+                            ? `${producto.descripcion.substring(0, 100)}...` 
+                            : producto.descripcion
+                        }
+                    </p>
+                )}
+                
+                <p className="item-price">
+                    ${producto.precio.toFixed(2)}
+                </p>
+                
+                <button 
+                    className="item-button"
+                    onClick={manejarAgregarAlCarrito}
+                >
+                    🛒 Agregar al Carrito
+                </button>
+            </div>
+        </div>
+    );
+}
+
+export default Item;
+
+--------------------------------------------------
+📄 src\components\ItemDetail\ItemDetail.css
+--------------------------------------------------
+
+/* 📄 src/components/ItemDetail/ItemDetail.css - REEMPLAZAR TODO */
+.itemdetail-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: 60vh;
+}
+
+.back-button {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    color: #FFFFFF;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    margin-bottom: 2rem;
+    text-decoration: none;
+    display: inline-block;
+}
+
+.back-button:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.itemdetail-card {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(26, 26, 26, 0.9));
+    border-radius: 24px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0;
+    position: relative;
+}
+
+.itemdetail-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, transparent);
+}
+
+.itemdetail-image {
+    padding: 3rem;
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.1), rgba(0, 212, 170, 0.05));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.itemdetail-img {
+    max-width: 100%;
+    max-height: 400px;
+    object-fit: contain;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.itemdetail-info {
+    padding: 3rem;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.itemdetail-category {
+    background: linear-gradient(135deg, #7B61FF, #6D4EFF);
+    color: white;
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    display: inline-block;
+    margin-bottom: 1rem;
+    box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
+}
+
+.itemdetail-title {
+    color: #FFFFFF;
+    font-size: 2.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+}
+
+.itemdetail-price {
+    color: #7B61FF;
+    font-size: 2rem;
+    font-weight: 800;
+    margin-bottom: 1.5rem;
+}
+
+.itemdetail-description {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 1.1rem;
+    line-height: 1.6;
+    margin-bottom: 2.5rem;
+}
+
+.itemdetail-add-button {
+    background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+    color: white;
+    border: none;
+    padding: 1.2rem 2.5rem;
+    border-radius: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 1.1rem;
+    box-shadow: 0 8px 25px rgba(123, 97, 255, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.itemdetail-add-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    transition: left 0.5s;
+}
+
+.itemdetail-add-button:hover::before {
+    left: 100%;
+}
+
+.itemdetail-add-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(123, 97, 255, 0.6);
+}
+
+.itemdetail-add-button:active {
+    transform: translateY(-1px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .itemdetail-card {
+        grid-template-columns: 1fr;
+    }
+    
+    .itemdetail-image {
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+    }
+    
+    .itemdetail-info {
+        padding: 2rem;
+    }
+    
+    .itemdetail-title {
+        font-size: 2rem;
+    }
+}
+
+--------------------------------------------------
+📄 src\components\ItemDetail\ItemDetail.jsx
+--------------------------------------------------
+
+import { useNavigate } from 'react-router-dom';
+import { useCarrito } from '../../context/CarritoContext';
+import './ItemDetail.css';
+
+function ItemDetail({ producto }) {
+    const navigate = useNavigate();
+    const { agregarAlCarrito } = useCarrito();
+
+    const manejarAgregarAlCarrito = () => {
+        agregarAlCarrito(producto);
+        alert(`✅ ${producto.nombre} agregado al carrito!`);
+    };
+
+    return (
+        <div className="itemdetail-container">
+            <button 
+                className="back-button"
+                onClick={() => navigate(-1)}
+            >
+                ← Volver
+            </button>
+
+            <div className="itemdetail-card">
+                <div className="itemdetail-image">
+                    <img 
+                        src={producto.imagen} 
+                        alt={producto.nombre}
+                        className="itemdetail-img"
+                    />
+                </div>
+
+                <div className="itemdetail-info">
+                    <span className="itemdetail-category">
+                        {producto.categoria === 'tecnologia' ? 'Lo Último!' : producto.categoria?.toUpperCase()}
+                    </span>
+                    
+                    <h1 className="itemdetail-title">{producto.nombre}</h1>
+                    
+                    <p className="itemdetail-price">${producto.precio.toFixed(2)}</p>
+                    
+                    <p className="itemdetail-description">{producto.descripcion}</p>
+
+                    <button 
+                        className="itemdetail-add-button"
+                        onClick={manejarAgregarAlCarrito}
+                    >
+                        🛒 Agregar al Carrito
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default ItemDetail;
+
+--------------------------------------------------
+📄 src\components\ItemDetailContainer\ItemDetailContainer.css
+--------------------------------------------------
+
+.itemdetail-loading {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.itemdetail-loading .loading-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+}
+
+.itemdetail-loading .loading-text {
+    font-size: 1.3rem;
+}
+
+.itemdetail-error-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 2rem 1rem;
+    min-height: 60vh;
+}
+
+.itemdetail-error {
+    background: rgba(255, 107, 107, 0.1);
+    color: #ff6b6b;
+    padding: 1.5rem 2rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 107, 107, 0.3);
+    text-align: center;
+    backdrop-filter: blur(10px);
+}
+
+.itemdetail-error .error-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.itemdetail-error .error-text {
+    margin: 0;
+    font-weight: 500;
+}
+
+--------------------------------------------------
+📄 src\components\ItemDetailContainer\ItemDetailContainer.jsx
+--------------------------------------------------
+
+import { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import ItemDetail from '../ItemDetail/ItemDetail';
+import './ItemDetailContainer.css';
+
+// Importar las mismas imágenes locales
+import laptopGamingPro from '../../assets/images/laptop-gaming-pro.jpg';
+import macbookAirM2 from '../../assets/images/macbook-air-m2.jpg';
+import mouseInalambrico from '../../assets/images/mouse-inalambrico.jpg';
+import tecladoMecanico from '../../assets/images/teclado-mecanico.jpg';
+import audifonosGaming from '../../assets/images/audifonos-gaming.jpg';
+import monitor4k from '../../assets/images/monitor-4k.jpg';
+import tabletDigital from '../../assets/images/tablet-digital.jpg';
+import altavozBluetooth from '../../assets/images/altavoz-bluetooth.jpg';
+
+function ItemDetailContainer() {
+    const [producto, setProducto] = useState(null);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+    const { id } = useParams();
+
+    useEffect(() => {
+        const cargarProducto = async () => {
+            try {
+                setCargando(true);
+                
+                setTimeout(() => {
+                    const productosSimulados = [
+                        { 
+                            id: 1, 
+                            nombre: "Notebook Gamer Asus ROG", 
+                            precio: 1850.00, 
+                            imagen: laptopGamingPro, 
+                            descripcion: "La Notebook Gamer Asus ROG cuenta con tarjeta gráfica RTX 4060, 16GB de RAM DDR5 y pantalla IPS de 15.6 pulgadas con tasa de refresco de 144Hz. Procesador Intel Core i7 de 12ma generación y almacenamiento SSD NVMe de 1TB. Ideal para gaming de alta gama y trabajos de diseño gráfico.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 2, 
+                            nombre: "MacBook Air 13\" M3", 
+                            precio: 1650.00, 
+                            imagen: macbookAirM2, 
+                            descripcion: "La MacBook Air con chip M3 ofrece un rendimiento excepcional en un diseño ultradelgado. Incluye 8GB de RAM unificada, 256GB de almacenamiento SSD y pantalla Retina de 13.6 pulgadas. Batería de hasta 18 horas de duración. Perfecta para profesionales y estudiantes.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 3, 
+                            nombre: "Mouse Logitech MX Master 3", 
+                            precio: 120.00, 
+                            imagen: mouseInalambrico, 
+                            descripcion: "El MX Master 3 es un mouse ergonómico diseñado para productividad. Cuenta con scroll MagSpeed de precisión, sensor Darkfield de 4000 DPI y conectividad inalámbrica mediante Bluetooth o receptor USB. Batería recargable con hasta 70 días de autonomía.", 
+                            categoria: "accesorios" 
+                        },
+                        { 
+                            id: 4, 
+                            nombre: "Teclado Mecánico Redragon Kumara", 
+                            precio: 85.00, 
+                            imagen: tecladoMecanico, 
+                            descripcion: "Teclado mecánico gaming con switches Outemu Blue que ofrecen respuesta táctil y sonido clicky. Iluminación RGB personalizable, diseño anti-ghosting de 104 teclas y estructura metálica duradera. Ideal para gamers y programadores.", 
+                            categoria: "perifericos" 
+                        },
+                        { 
+                            id: 5, 
+                            nombre: "Auriculares HyperX Cloud II", 
+                            precio: 150.00, 
+                            imagen: audifonosGaming, 
+                            descripcion: "Auriculares gaming con sonido surround virtual 7.1, drivers de 53mm y micrófono desmontable con cancelación de ruido. Almohadillas de espuma viscoelástica para mayor comodidad en sesiones largas. Compatible con PC, PS4, PS5 y Xbox.", 
+                            categoria: "audio" 
+                        },
+                        { 
+                            id: 6, 
+                            nombre: "Monitor Samsung 32\" 4K UHD", 
+                            precio: 520.00, 
+                            imagen: monitor4k, 
+                            descripcion: "Monitor curvo de 32 pulgadas con resolución 4K UHD (3840x2160). Tecnología HDR10, tasa de refresco de 60Hz y tiempo de respuesta de 4ms. Conexiones HDMI, DisplayPort y salida de audio. Perfecto para trabajo, gaming y consumo multimedia.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 7, 
+                            nombre: "Tablet Samsung S8 Plus", 
+                            precio: 890.00, 
+                            imagen: tabletDigital, 
+                            descripcion: "Tablet premium con pantalla Super AMOLED de 12.4 pulgadas, S-Pen incluido y 128GB de almacenamiento expandible. Procesador Snapdragon 8 Gen 1 y 8GB de RAM. Ideal para artistas digitales, estudiantes y profesionales creativos.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 8, 
+                            nombre: "Parlante JBL Flip 6", 
+                            precio: 180.00, 
+                            imagen: altavozBluetooth, 
+                            descripcion: "Parlante Bluetooth portátil con certificación IP67 resistente al agua y polvo. Sonido stereo JBL Pro, batería de 12 horas de duración y función PartyBoost para conectar múltiples parlantes. Diseño compacto y fácil de transportar.", 
+                            categoria: "audio" 
+                        }
+                    ];
+                    
+                    const productoEncontrado = productosSimulados.find(p => p.id === parseInt(id));
+                    
+                    if (productoEncontrado) {
+                        setProducto(productoEncontrado);
+                    } else {
+                        setError('Producto no encontrado');
+                    }
+                    
+                    setCargando(false);
+                }, 800);
+
+            } catch (err) {
+                setError('Error al cargar el producto. Intenta más tarde.');
+                setCargando(false);
+            }
+        };
+
+        cargarProducto();
+    }, [id]);
+
+    if (cargando) {
+        return (
+            <div className="itemdetail-loading">
+                <div className="loading-icon">🔄</div>
+                <p className="loading-text">Cargando producto...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="itemdetail-error-container">
+                <div className="itemdetail-error">
+                    <div className="error-icon">❌</div>
+                    <p className="error-text">{error}</p>
+                </div>
+            </div>
+        );
+    }
+
+    return <ItemDetail producto={producto} />;
+}
+
+export default ItemDetailContainer;
+
+--------------------------------------------------
+📄 src\components\ItemList\ItemList.css
+--------------------------------------------------
+
+/* 📄 src/components/ItemList/ItemList.css - REEMPLAZAR TODO EL CONTENIDO */
+.items-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    gap: 2rem;
+    padding: 0 1rem;
+    justify-items: center;
+}
+
+.itemlist-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding: 0 1rem;
+}
+
+.itemlist-title {
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 1rem;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    background: linear-gradient(135deg, #ffffff 0%, #7B61FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.itemlist-subtitle {
+    font-size: 1.1rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.6;
+    max-width: 600px;
+    margin: 0 auto;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+}
+
+.products-count {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 1rem;
+    color: #7B61FF;
+    font-weight: 600;
+}
+
+--------------------------------------------------
+📄 src\components\ItemList\ItemList.jsx
+--------------------------------------------------
+
+// 📄 src/components/ItemList/ItemList.jsx - REEMPLAZAR TODO
+import Item from '../Item/Item';
+import { 
+    COLOR_ACCENT, 
+    COLOR_TEXT_LIGHT,
+    COLOR_SUBTLE_TEXT 
+} from '../../App';
+import './ItemList.css';
+
+function ItemList({ productos, cargando, error, categoria, esPaginaInicio }) {
+    const categoriaTitulos = {
+        tecnologia: "Lo Último!",
+        accesorios: "Accesorios 🖱️", 
+        audio: "Audio 🔊",
+        perifericos: "Periféricos 🎮"
+    };
+
+    const getTituloCategoria = () => {
+        if (categoria && categoriaTitulos[categoria]) {
+            return categoriaTitulos[categoria];
+        }
+        if (esPaginaInicio) {
+            return "Productos Destacados ⭐";
+        }
+        return "Nuestros Productos";
+    };
+
+    const getSubtituloCategoria = () => {
+        if (categoria && categoriaTitulos[categoria]) {
+            return `Descubre nuestra selección exclusiva de productos ${categoriaTitulos[categoria].toLowerCase()}`;
+        }
+        if (esPaginaInicio) {
+            return "Los mejores productos tecnológicos seleccionados para ti";
+        }
+        return "Explora nuestra completa colección de productos tecnológicos seleccionados cuidadosamente.";
+    };
+
+    if (cargando) {
+        return (
+            <div className="loading-container">
+                <div className="loading-icon">🔄</div>
+                <p className="loading-text">Cargando productos...</p>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="error-container">
+                <div className="error-icon">❌</div>
+                <p className="error-text">{error}</p>
+            </div>
+        );
+    }
+
+    if (productos.length === 0) {
+        return (
+            <div>
+                <div className="itemlist-header">
+                    <h1 className="itemlist-title">
+                        {getTituloCategoria()}
+                    </h1>
+                    <p className="itemlist-subtitle">
+                        {getSubtituloCategoria()}
+                    </p>
+                </div>
+                <div className="no-products-container">
+                    <div className="no-products-icon">
+                        {categoria ? '🔍' : '📦'}
+                    </div>
+                    <h3 className="no-products-title">
+                        {categoria ? 
+                            `No hay productos en ${categoriaTitulos[categoria] || categoria}` : 
+                            'No hay productos disponibles'
+                        }
+                    </h3>
+                    <p className="no-products-text">
+                        {categoria ? 
+                            'Explora otras categorías o todos nuestros productos.' : 
+                            'Vuelve a intentarlo más tarde.'
+                        }
+                    </p>
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div>
+            {/* Solo mostrar header si no es página de inicio (ya tiene banner) */}
+            {!esPaginaInicio && (
+                <div className="itemlist-header">
+                    <h1 className="itemlist-title">
+                        {getTituloCategoria()}
+                    </h1>
+                    <p className="itemlist-subtitle">
+                        {getSubtituloCategoria()}
+                        {categoria && (
+                            <span className="products-count">
+                                {productos.length} producto{productos.length !== 1 ? 's' : ''} encontrado{productos.length !== 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </p>
+                </div>
+            )}
+            
+            <div className="items-grid">
+                {productos.map(producto => (
+                    <Item 
+                        key={producto.id}
+                        producto={producto}
+                    />
+                ))}
+            </div>
+        </div>
+    );
+}
+
+export default ItemList;
+
+--------------------------------------------------
+📄 src\components\ItemListContainer\ItemListContainer.css
+--------------------------------------------------
+
+/* 📄 src/components/ItemListContainer/ItemListContainer.css - REEMPLAZAR TODO */
+.itemlistcontainer {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1rem 2rem 1rem;
+    min-height: 60vh;
+}
+
+/* Banner para página de inicio */
+.inicio-banner {
+    background: linear-gradient(135deg, 
+        rgba(30, 30, 30, 0.9) 0%, 
+        rgba(26, 26, 26, 0.9) 100%);
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    text-align: center;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    box-shadow: 
+        0 10px 30px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.inicio-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, transparent);
+}
+
+.banner-title {
+    margin: 0 0 0.8rem 0;
+    font-size: 2.2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, #FFFFFF 0%, #7B61FF 50%, #00D4AA 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+}
+
+.banner-subtitle {
+    font-size: 1.1rem;
+    margin: 0;
+    color: rgba(255, 255, 255, 0.8);
+    font-weight: 300;
+    line-height: 1.6;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.cart-info {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(26, 26, 26, 0.9));
+    backdrop-filter: blur(20px);
+    padding: 1.5rem 2rem;
+    margin-bottom: 2rem;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.cart-info-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.cart-info-text {
+    margin: 0;
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: #ffffff;
+}
+
+.cart-info-total {
+    margin: 0.3rem 0 0 0;
+    font-size: 0.95rem;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.clear-cart-button {
+    background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+}
+
+.clear-cart-button:hover {
+    background: linear-gradient(135deg, #FF3742 0%, #FF2A36 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 107, 107, 0.4);
+}
+
+--------------------------------------------------
+📄 src\components\ItemListContainer\ItemListContainer.jsx
+--------------------------------------------------
+
+import { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ItemList from '../ItemList/ItemList';
+import { useCarrito } from '../../context/CarritoContext';
+import './ItemListContainer.css';
+
+// Importar imágenes locales
+import laptopGamingPro from '../../assets/images/laptop-gaming-pro.jpg';
+import macbookAirM2 from '../../assets/images/macbook-air-m2.jpg';
+import mouseInalambrico from '../../assets/images/mouse-inalambrico.jpg';
+import tecladoMecanico from '../../assets/images/teclado-mecanico.jpg';
+import audifonosGaming from '../../assets/images/audifonos-gaming.jpg';
+import monitor4k from '../../assets/images/monitor-4k.jpg';
+import tabletDigital from '../../assets/images/tablet-digital.jpg';
+import altavozBluetooth from '../../assets/images/altavoz-bluetooth.jpg';
+
+function ItemListContainer() {
+    const [productos, setProductos] = useState([]);
+    const [cargando, setCargando] = useState(true);
+    const [error, setError] = useState(null);
+    const { carrito, vaciarCarrito } = useCarrito();
+    const [searchParams] = useSearchParams();
+    
+    const categoria = searchParams.get('categoria');
+
+    useEffect(() => {
+        const cargarProductos = async () => {
+            try {
+                setCargando(true);
+                
+                setTimeout(() => {
+                    const productosSimulados = [
+                        { 
+                            id: 1, 
+                            nombre: "Notebook Gamer Asus ROG", 
+                            precio: 1850.00, 
+                            imagen: laptopGamingPro, 
+                            descripcion: "Notebook para gaming con RTX 4060, 16GB RAM y pantalla 144Hz. Ideal para juegos y diseño.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 2, 
+                            nombre: "MacBook Air 13\" M3", 
+                            precio: 1650.00, 
+                            imagen: macbookAirM2, 
+                            descripcion: "Ultraliviana con chip M3, 8GB RAM y 256GB SSD. Perfecta para trabajo y estudio.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 3, 
+                            nombre: "Mouse Logitech MX Master 3", 
+                            precio: 120.00, 
+                            imagen: mouseInalambrico, 
+                            descripcion: "Mouse ergonómico inalámbrico con scroll infinito. Conexión Bluetooth y USB.", 
+                            categoria: "accesorios" 
+                        },
+                        { 
+                            id: 4, 
+                            nombre: "Teclado Mecánico Redragon Kumara", 
+                            precio: 85.00, 
+                            imagen: tecladoMecanico, 
+                            descripcion: "Teclado mecánico RGB switches outemu blue. Anti-ghosting y diseño compacto.", 
+                            categoria: "perifericos" 
+                        },
+                        { 
+                            id: 5, 
+                            nombre: "Auriculares HyperX Cloud II", 
+                            precio: 150.00, 
+                            imagen: audifonosGaming, 
+                            descripcion: "Auriculares gaming con sonido surround 7.1 y micrófono desmontable.", 
+                            categoria: "audio" 
+                        },
+                        { 
+                            id: 6, 
+                            nombre: "Monitor Samsung 32\" 4K UHD", 
+                            precio: 520.00, 
+                            imagen: monitor4k, 
+                            descripcion: "Monitor curvo 32 pulgadas, 4K UHD con tecnología HDR y FreeSync.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 7, 
+                            nombre: "Tablet Samsung S8 Plus", 
+                            precio: 890.00, 
+                            imagen: tabletDigital, 
+                            descripcion: "Tablet con S-Pen incluido, 128GB almacenamiento. Ideal para diseño y notas.", 
+                            categoria: "tecnologia" 
+                        },
+                        { 
+                            id: 8, 
+                            nombre: "Parlante JBL Flip 6", 
+                            precio: 180.00, 
+                            imagen: altavozBluetooth, 
+                            descripcion: "Parlante Bluetooth portátil resistente al agua. 12 horas de batería.", 
+                            categoria: "audio" 
+                        }
+                    ];
+                    
+                    let productosFiltrados = productosSimulados;
+                    if (categoria) {
+                        productosFiltrados = productosSimulados.filter(p => 
+                            p.categoria && p.categoria.toLowerCase() === categoria.toLowerCase()
+                        );
+                    }
+                    
+                    setProductos(productosFiltrados);
+                    setCargando(false);
+                }, 1000);
+
+            } catch (err) {
+                setError('Error al cargar los productos. Intenta más tarde.');
+                setCargando(false);
+            }
+        };
+
+        cargarProductos();
+    }, [categoria]);
+
+    return (
+        <div className="itemlistcontainer">
+            {!cargando && !error && carrito.length > 0 && (
+                <div className="cart-info">
+                    <div className="cart-info-content">
+                        <div>
+                            <p className="cart-info-text">
+                                🛒 <strong>Carrito:</strong> {carrito.length} producto{carrito.length !== 1 ? 's' : ''}
+                            </p>
+                            {carrito.length > 0 && (
+                                <p className="cart-info-total">
+                                    Total: ${carrito.reduce((total, producto) => total + producto.precio, 0).toFixed(2)}
+                                </p>
+                            )}
+                        </div>
+                        
+                        <button 
+                            onClick={vaciarCarrito}
+                            className="clear-cart-button"
+                        >
+                            🗑️ Vaciar Carrito
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            <ItemList 
+                productos={productos}
+                cargando={cargando}
+                error={error}
+                categoria={categoria}
+            />
+        </div>
+    );
+}
+
+export default ItemListContainer;
+
+--------------------------------------------------
+📄 src\components\layout\Footer.css
+--------------------------------------------------
+
+/* 📄 src/components/layout/Footer.css */
+.footer {
+    background: linear-gradient(135deg, rgba(10, 10, 10, 0.95), rgba(26, 26, 26, 0.95));
+    backdrop-filter: blur(20px);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    margin-top: auto;
+    position: relative;
+    overflow: hidden;
+}
+
+.footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, #00D4AA, transparent);
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem 2rem 2rem;
+}
+
+/* Sección principal */
+.footer-main {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 3rem;
+    margin-bottom: 2rem;
+}
+
+.footer-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.footer-logo {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.logo-icon {
+    width: 40px;
+    height: 40px;
+    background: linear-gradient(135deg, #7B61FF 0%, #00D4AA 100%);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 0.9rem;
+    box-shadow: 0 4px 15px rgba(123, 97, 255, 0.3);
+}
+
+.logo-text h3 {
+    margin: 0;
+    color: #ffffff;
+    font-size: 1.3rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #FFFFFF 0%, #7B61FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.logo-text p {
+    margin: 0.2rem 0 0 0;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 0.8rem;
+    font-weight: 300;
+}
+
+.footer-description {
+    color: rgba(255, 255, 255, 0.8);
+    font-size: 0.9rem;
+    line-height: 1.5;
+    margin: 0;
+}
+
+/* Links del footer */
+.footer-links {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2rem;
+}
+
+.footer-section h4 {
+    color: #ffffff;
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+
+.footer-link {
+    display: block;
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    transition: all 0.3s ease;
+    cursor: pointer;
+}
+
+.footer-link:hover {
+    color: #7B61FF;
+    transform: translateX(5px);
+}
+
+/* Línea divisoria */
+.footer-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+    margin: 2rem 0;
+}
+
+/* Sección inferior */
+.footer-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.footer-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+}
+
+.project-info {
+    flex: 1;
+    min-width: 300px;
+}
+
+.copyright {
+    color: rgba(255, 255, 255, 0.8);
+    margin: 0 0 0.5rem 0;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.project-details {
+    color: rgba(255, 255, 255, 0.6);
+    margin: 0;
+    font-size: 0.85rem;
+    line-height: 1.4;
+}
+
+.project-details strong {
+    color: #7B61FF;
+    font-weight: 600;
+}
+
+.tech-stack {
+    display: flex;
+    gap: 0.8rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.tech-item {
+    background: rgba(123, 97, 255, 0.1);
+    color: #7B61FF;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(123, 97, 255, 0.2);
+    transition: all 0.3s ease;
+}
+
+.tech-item:hover {
+    background: rgba(123, 97, 255, 0.2);
+    transform: translateY(-2px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .footer-container {
+        padding: 2rem 1.5rem 1.5rem 1.5rem;
+    }
+
+    .footer-main {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+
+    .footer-links {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+
+    .footer-bottom {
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .footer-info {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .project-info {
+        min-width: auto;
+    }
+
+    .tech-stack {
+        justify-content: center;
+    }
+
+    .footer-logo {
+        justify-content: center;
+        text-align: center;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .footer-container {
+        padding: 1.5rem 1rem 1rem 1rem;
+    }
+
+    .tech-stack {
+        gap: 0.5rem;
+    }
+
+    .tech-item {
+        padding: 0.3rem 0.6rem;
+        font-size: 0.7rem;
+    }
+}
+
+--------------------------------------------------
+📄 src\components\layout\Footer.jsx
+--------------------------------------------------
+
+import { Link } from 'react-router-dom';
+import './Footer.css';
+
+function Footer() {
+    const currentYear = new Date().getFullYear();
+
+    return (
+        <footer className="footer">
+            <div className="footer-container">
+                {/* Sección principal */}
+                <div className="footer-main">
+                    <div className="footer-brand">
+                        <div className="footer-logo">
+                            <span className="logo-icon">TL</span>
+                            <div className="logo-text">
+                                <h3>TalentoLab Store</h3>
+                                <p>Tecnología de Vanguardia</p>
+                            </div>
+                        </div>
+                        <p className="footer-description">
+                            Tu destino confiable para tecnología de última generación y accesorios premium.
+                        </p>
+                    </div>
+
+                    <div className="footer-links">
+                        <div className="footer-section">
+                            <h4>Explorar</h4>
+                            <Link to="/?categoria=tecnologia" className="footer-link">Lo Último!</Link>
+                            <Link to="/?categoria=accesorios" className="footer-link">Accesorios</Link>
+                            <Link to="/?categoria=audio" className="footer-link">Audio</Link>
+                            <Link to="/?categoria=perifericos" className="footer-link">Gaming</Link>
+                        </div>
+
+                        <div className="footer-section">
+                            <h4>Cuenta</h4>
+                            <Link to="/login" className="footer-link">Ingresar</Link>
+                            <Link to="/carrito" className="footer-link">Carrito</Link>
+                        </div>
+
+                        <div className="footer-section">
+                            <h4>Soporte</h4>
+                            <span className="footer-link">Contacto</span>
+                            <span className="footer-link">FAQ</span>
+                            <span className="footer-link">Términos</span>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Línea separadora */}
+                <div className="footer-divider"></div>
+
+                {/* Sección inferior con información personal */}
+                <div className="footer-bottom">
+                    <div className="footer-info">
+                        <div className="project-info">
+                            <p className="copyright">
+                                © {currentYear} TalentoLab Store. Todos los derechos reservados.
+                            </p>
+                            <p className="project-details">
+                                Proyecto desarrollado por <strong>Brian Pitz</strong> | 
+                                E-commerce React con Context API
+                            </p>
+                        </div>
+                        
+                        <div className="tech-stack">
+                            <span className="tech-item">React</span>
+                            <span className="tech-item">Vite</span>
+                            <span className="tech-item">Context API</span>
+                            <span className="tech-item">CSS3</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </footer>
+    );
+}
+
+export default Footer;
+
+--------------------------------------------------
+📄 src\components\layout\Header.jsx
+--------------------------------------------------
+
+// Definiciones de colores
+const COLOR_ACCENT = '#00ADB5';         // Verde Cian
+const COLOR_SECONDARY_DARK = '#393E46'; // Gris oscuro para componentes
+const COLOR_PRIMARY_DARK = '#222831';   // Gris muy oscuro
+
+function Header() {
+    return (
+        <header style={{
+            // Usamos el color principal oscuro para el fondo (se fusiona con el Nav)
+            backgroundColor: COLOR_PRIMARY_DARK, 
+            color: 'white',
+            padding: '1.5rem 2rem 0.5rem 2rem', // Menos padding inferior
+            textAlign: 'center',
+            // Sombra sutil pero visible
+            boxShadow: '0 4px 10px rgba(0,0,0,0.4)',
+            width: '100%',
+            margin: 0,
+            // Quitamos el borde, ya que el Nav tendrá su propio separador visual
+            borderBottom: 'none' 
+        }}>
+            <h1 style={{ 
+                margin: 0, 
+                fontSize: '2rem',
+                fontWeight: '700',
+                color: COLOR_ACCENT, // Título en color de acento
+                textShadow: '0 0 5px rgba(0, 173, 181, 0.4)'
+            }}>
+                💻 TalentoLab Store
+            </h1>
+            <p style={{ 
+                margin: '0.3rem 0 0.5rem 0', // Menos margen superior
+                opacity: 0.8,
+                fontSize: '0.9rem',
+                fontWeight: '300',
+                color: '#AAAAAA'
+            }}>
+                Tecnología que ilumina tu futuro
+            </p>
+        </header>
+    );
+}
+
+export default Header;
+
+--------------------------------------------------
+📄 src\components\layout\Main.jsx
+--------------------------------------------------
+
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { BrowserRouter } from "react-router-dom";
+import App from "./App.jsx";
+
+createRoot(document.getElementById("root")).render(
+  <StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </StrictMode>
+);
+
+--------------------------------------------------
+📄 src\components\Nav\Nav.css
+--------------------------------------------------
+
+/* 📄 src/components/Nav/Nav.css - REEMPLAZAR TODO */
+/* HEADER COMPACTO */
+.nav-header {
+    background: rgba(10, 10, 10, 0.95);
+    backdrop-filter: blur(20px);
+    color: white;
+    padding: 1.5rem 2rem 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: relative;
+    overflow: hidden;
+}
+
+.nav-header::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, #00D4AA, transparent);
+    animation: glowMove 3s ease-in-out infinite;
+}
+
+@keyframes glowMove {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 1; }
+}
+
+.header-content {
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.header-main {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    justify-content: center;
+}
+
+.header-link {
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    transition: transform 0.3s ease;
+}
+
+.header-link:hover {
+    transform: scale(1.02);
+}
+
+.header-title {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, #FFFFFF 0%, #7B61FF 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.header-subtitle {
+    margin: 0;
+    opacity: 0.8;
+    font-size: 0.9rem;
+    font-weight: 300;
+    color: rgba(255, 255, 255, 0.7);
+    letter-spacing: 1px;
+}
+
+/* NAVEGACIÓN OPTIMIZADA */
+.nav {
+    background: rgba(26, 26, 26, 0.95);
+    backdrop-filter: blur(20px);
+    padding: 1rem 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+}
+
+.nav-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+    gap: 2rem;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 2rem;
+    flex: 1;
+}
+
+.nav-link {
+    color: #ffffff;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    padding: 0.8rem 1.5rem;
+    border-radius: 10px;
+    white-space: nowrap;
+    background: rgba(123, 97, 255, 0.1);
+    border: 1px solid rgba(123, 97, 255, 0.2);
+    min-width: 80px;
+    text-align: center;
+}
+
+.nav-link:hover {
+    background: rgba(123, 97, 255, 0.2);
+    color: #FFFFFF;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(123, 97, 255, 0.25);
+}
+
+/* CATEGORÍAS COMO NAVEGACIÓN PRINCIPAL */
+.nav-categories {
+    display: flex;
+    gap: 0.8rem;
+    flex: 1;
+    justify-content: center;
+}
+
+.category-link {
+    color: rgba(255, 255, 255, 0.9);
+    text-decoration: none;
+    font-size: 1rem;
+    font-weight: 600;
+    padding: 0.8rem 1.8rem;
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.15), rgba(123, 97, 255, 0.1));
+    border-radius: 12px;
+    transition: all 0.3s ease;
+    border: 1px solid rgba(123, 97, 255, 0.2);
+    position: relative;
+    overflow: hidden;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.category-link::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    transition: left 0.5s;
+}
+
+.category-link:hover::before {
+    left: 100%;
+}
+
+.category-link:hover {
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.25), rgba(123, 97, 255, 0.15));
+    color: #FFFFFF;
+    border-color: rgba(123, 97, 255, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(123, 97, 255, 0.25);
+}
+
+/* Estilos específicos para cada categoría */
+.category-link[href*="tecnologia"] {
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.2), rgba(123, 97, 255, 0.1));
+    border-color: rgba(123, 97, 255, 0.3);
+}
+
+.category-link[href*="accesorios"] {
+    background: linear-gradient(135deg, rgba(0, 212, 170, 0.2), rgba(0, 212, 170, 0.1));
+    border-color: rgba(0, 212, 170, 0.3);
+}
+
+.category-link[href*="audio"] {
+    background: linear-gradient(135deg, rgba(255, 184, 0, 0.2), rgba(255, 184, 0, 0.1));
+    border-color: rgba(255, 184, 0, 0.3);
+}
+
+.category-link[href*="perifericos"] {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.2), rgba(255, 71, 87, 0.1));
+    border-color: rgba(255, 71, 87, 0.3);
+}
+
+.category-link[href*="tecnologia"]:hover {
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.3), rgba(123, 97, 255, 0.2));
+    box-shadow: 0 8px 25px rgba(123, 97, 255, 0.3);
+}
+
+.category-link[href*="accesorios"]:hover {
+    background: linear-gradient(135deg, rgba(0, 212, 170, 0.3), rgba(0, 212, 170, 0.2));
+    box-shadow: 0 8px 25px rgba(0, 212, 170, 0.3);
+}
+
+.category-link[href*="audio"]:hover {
+    background: linear-gradient(135deg, rgba(255, 184, 0, 0.3), rgba(255, 184, 0, 0.2));
+    box-shadow: 0 8px 25px rgba(255, 184, 0, 0.3);
+}
+
+.category-link[href*="perifericos"]:hover {
+    background: linear-gradient(135deg, rgba(255, 71, 87, 0.3), rgba(255, 71, 87, 0.2));
+    box-shadow: 0 8px 25px rgba(255, 71, 87, 0.3);
+}
+
+.nav-right {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+}
+
+.cart-link {
+    color: #ffffff;
+    text-decoration: none;
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.2), rgba(123, 97, 255, 0.1));
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    border: 1px solid rgba(123, 97, 255, 0.3);
+    position: relative;
+    transition: all 0.3s ease;
+    font-weight: 600;
+    font-size: 1rem;
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.cart-link:hover {
+    background: linear-gradient(135deg, rgba(123, 97, 255, 0.3), rgba(123, 97, 255, 0.2));
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(123, 97, 255, 0.3);
+}
+
+.cart-badge {
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    background: linear-gradient(135deg, #00D4AA, #00B894);
+    color: #0A0A0A;
+    border-radius: 50%;
+    width: 22px;
+    height: 22px;
+    font-size: 0.75rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    box-shadow: 0 3px 10px rgba(0, 212, 170, 0.5);
+    border: 2px solid #0A0A0A;
+}
+
+.logout-button {
+    background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+    color: white;
+    border: none;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.3);
+    white-space: nowrap;
+    min-width: 140px;
+}
+
+.logout-button:hover {
+    background: linear-gradient(135deg, #FF3742 0%, #FF2A36 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(255, 71, 87, 0.4);
+}
+
+.login-button {
+    background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+    color: white;
+    padding: 0.8rem 1.8rem;
+    border-radius: 12px;
+    text-decoration: none;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(123, 97, 255, 0.3);
+    white-space: nowrap;
+    min-width: 100px;
+    text-align: center;
+}
+
+.login-button:hover {
+    background: linear-gradient(135deg, #6D4EFF 0%, #5D3EFF 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.4);
+}
+
+/* Responsive para móviles */
+@media (max-width: 768px) {
+    .nav-header {
+        padding: 1rem 1rem 0.8rem 1rem;
+    }
+    
+    .header-title {
+        font-size: 1.6rem;
+    }
+    
+    .header-subtitle {
+        font-size: 0.8rem;
+    }
+    
+    .nav {
+        padding: 0.8rem 1rem;
+    }
+    
+    .nav-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+    
+    .nav-left {
+        flex-direction: column;
+        gap: 1rem;
+        width: 100%;
+    }
+    
+    .nav-categories {
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.6rem;
+        width: 100%;
+    }
+    
+    .category-link {
+        font-size: 0.9rem;
+        padding: 0.7rem 1.2rem;
+        min-width: 80px;
+        flex: 1;
+        max-width: 120px;
+    }
+    
+    .nav-right {
+        width: 100%;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.8rem;
+    }
+    
+    .cart-link,
+    .login-button,
+    .logout-button {
+        padding: 0.7rem 1.2rem;
+        font-size: 0.9rem;
+        min-width: 80px;
+        flex: 1;
+        max-width: 120px;
+    }
+    
+    .logout-button {
+        min-width: 120px;
+    }
+}
+
+/* Responsive para tablets */
+@media (max-width: 1024px) {
+    .nav-left {
+        gap: 1.5rem;
+    }
+    
+    .nav-categories {
+        gap: 0.6rem;
+    }
+    
+    .category-link {
+        font-size: 0.9rem;
+        padding: 0.7rem 1.4rem;
+        min-width: 90px;
+    }
+}
+
+--------------------------------------------------
+📄 src\components\Nav\Nav.jsx
+--------------------------------------------------
+
+// 📄 src/components/Nav/Nav.jsx - REEMPLAZAR TODO
+import { Link } from 'react-router-dom';
+import { useCarrito } from '../../context/CarritoContext';
+import './Nav.css';
+
+function Nav({ isAuthenticated, onLogout }) {
+    const { carrito } = useCarrito();
+
+    return (
+        <>
+            {/* HEADER COMPACTO */}
+            <header className="nav-header">
+                <div className="header-content">
+                    <div className="header-main">
+                        <Link to="/" className="header-link">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                                <div style={{
+                                    width: '24px',
+                                    height: '24px',
+                                    background: 'linear-gradient(135deg, #7B61FF 0%, #00D4AA 100%)',
+                                    borderRadius: '4px',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '12px',
+                                    color: 'white',
+                                    fontWeight: 'bold'
+                                }}>
+                                    TL
+                                </div>
+                                <h1 className="header-title">
+                                    TalentoLab
+                                </h1>
+                            </div>
+                            <p className="header-subtitle">
+                                Technology Store
+                            </p>
+                        </Link>
+                    </div>
+                </div>
+            </header>
+
+            {/* NAVEGACIÓN OPTIMIZADA */}
+            <nav className="nav">
+                <div className="nav-container">
+                    <div className="nav-left">
+                        <Link to="/" className="nav-link">
+                            Inicio
+                        </Link>
+
+                        {/* CATEGORÍAS COMO NAVEGACIÓN PRINCIPAL */}
+                        <div className="nav-categories">
+                            <Link to="/?categoria=tecnologia" className="category-link">
+                                Lo Último!
+                            </Link>
+                            
+                            <Link to="/?categoria=accesorios" className="category-link">
+                                Accesorios
+                            </Link>
+                            
+                            <Link to="/?categoria=audio" className="category-link">
+                                Audio
+                            </Link>
+                            
+                            <Link to="/?categoria=perifericos" className="category-link">
+                                Gaming
+                            </Link>
+                        </div>
+                    </div>
+
+                    <div className="nav-right">
+                        <Link to="/carrito" className="cart-link">
+                            Carrito 
+                            {carrito.length > 0 && (
+                                <span className="cart-badge">
+                                    {carrito.length}
+                                </span>
+                            )}
+                        </Link>
+                        
+                        {isAuthenticated ? (
+                            <button onClick={onLogout} className="logout-button">
+                                Cerrar Sesión
+                            </button>
+                        ) : (
+                            <Link to="/login" className="login-button">
+                                Ingresar
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </nav>
+        </>
+    );
+}
+
+export default Nav;
+
+--------------------------------------------------
+📄 src\components\RutaProtegida\RutaProtegida.jsx
+--------------------------------------------------
+
+import { Navigate } from 'react-router-dom';
+
+function RutaProtegida({ children, isAuthenticated }) {
+    if (!isAuthenticated) {
+        return <Navigate to="/login" replace />;
+    }
+    
+    return children;
+}
+
+export default RutaProtegida;
+
+--------------------------------------------------
+📄 src\context\CarritoContext.jsx
+--------------------------------------------------
+
+import { createContext, useContext, useState } from 'react';
+
+// Crear el contexto
+export const CarritoContext = createContext();
+
+// Proveedor del contexto
+export function CarritoProvider({ children }) {
+    const [carrito, setCarrito] = useState([]);
+
+    // Agregar producto al carrito - CORREGIDO: evita duplicados exactos
+    const agregarAlCarrito = (producto) => {
+        // Agregar ID único temporal para evitar problemas de duplicación
+        const productoConId = {
+            ...producto,
+            carritoId: Date.now() + Math.random() // ID único temporal
+        };
+        setCarrito([...carrito, productoConId]);
+    };
+
+    // Vaciar carrito
+    const vaciarCarrito = () => {
+        setCarrito([]);
+    };
+
+    // Eliminar un producto específico del carrito (por carritoId)
+    const eliminarDelCarrito = (carritoId) => {
+        const nuevoCarrito = carrito.filter(item => item.carritoId !== carritoId);
+        setCarrito(nuevoCarrito);
+    };
+
+    // Calcular total
+    const calcularTotal = () => {
+        return carrito.reduce((total, producto) => total + producto.precio, 0);
+    };
+
+    // Obtener cantidad de items únicos
+    const obtenerCantidadItems = () => {
+        return carrito.length;
+    };
+
+    const value = {
+        carrito,
+        agregarAlCarrito,
+        vaciarCarrito,
+        eliminarDelCarrito,
+        calcularTotal,
+        obtenerCantidadItems
+    };
+
+    return (
+        <CarritoContext.Provider value={value}>
+            {children}
+        </CarritoContext.Provider>
+    );
+}
+
+// Hook personalizado para usar el contexto
+export function useCarrito() {
+    const context = useContext(CarritoContext);
+    if (!context) {
+        // Lanzar un error si el hook se usa fuera del proveedor
+        throw new Error('useCarrito debe usarse dentro de CarritoProvider');
+    }
+    return context;
+}
+
+--------------------------------------------------
+📄 src\main.jsx
+--------------------------------------------------
+
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { BrowserRouter } from 'react-router-dom'
+import App from './App.jsx'
+
+ReactDOM.createRoot(document.getElementById('root')).render(
+  <React.StrictMode>
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
+  </React.StrictMode>,
+)
+
+--------------------------------------------------
+📄 src\pages\Admin\Admin.css
+--------------------------------------------------
+
+.admin-container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.admin-title {
+    color: #ffffff;
+    margin-bottom: 1rem;
+    font-size: 2rem;
+}
+
+.admin-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+.admin-warning {
+    background-color: #fff3cd;
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+    border: 1px solid #ffeaa7;
+    color: #856404;
+}
+
+.warning-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+}
+
+.warning-text {
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+}
+
+.warning-description {
+    margin: 0;
+    opacity: 0.8;
+}
+
+--------------------------------------------------
+📄 src\pages\Admin\Admin.jsx
+--------------------------------------------------
+
+import './Admin.css';
+
+function Admin() {
+    return (
+        <div className="admin-container">
+            <h2 className="admin-title">⚙️ Panel de Administración</h2>
+            <p className="admin-subtitle">Área reservada para administradores del sistema.</p>
+            <div className="admin-warning">
+                <p className="warning-icon">🔒</p>
+                <p className="warning-text">Acceso restringido</p>
+                <p className="warning-description">Esta área requiere autenticación especial.</p>
+            </div>
+        </div>
+    );
+}
+
+export default Admin;
+
+--------------------------------------------------
+📄 src\pages\Carrito\Carrito.css
+--------------------------------------------------
+
+.carrito-container {
+    padding: 2rem;
+    max-width: 1000px;
+    margin: 0 auto;
+    min-height: 60vh;
+}
+
+.carrito-title {
+    color: #ffffff;
+    margin-bottom: 2rem;
+    text-align: center;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.carrito-vacio {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 4rem 2rem;
+    text-align: center;
+    margin-top: 2rem;
+}
+
+.carrito-vacio-icono {
+    font-size: 5rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.7;
+}
+
+.carrito-vacio-titulo {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1rem;
+    font-size: 1.5rem;
+}
+
+.carrito-vacio-texto {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 1.1rem;
+}
+
+.carrito-productos {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.carrito-subtitulo {
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.carrito-item {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    transition: all 0.3s ease;
+}
+
+.carrito-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    transform: translateY(-2px);
+}
+
+.item-imagen {
+    width: 80px;
+    height: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    overflow: hidden;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    flex-shrink: 0;
+}
+
+.item-imagen img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.item-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.item-nombre {
+    color: #ffffff;
+    margin: 0 0 0.5rem 0;
+    font-size: 1.2rem;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.item-precio {
+    color: #7B61FF;
+    margin: 0;
+    font-weight: bold;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.item-eliminar {
+    background: linear-gradient(135deg, #FF4757 0%, #FF3742 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.item-eliminar:hover {
+    background: linear-gradient(135deg, #FF3742 0%, #FF2A36 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 71, 87, 0.4);
+}
+
+.carrito-total {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(15px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.total-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.total-titulo {
+    color: #ffffff;
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.total-monto {
+    color: #7B61FF;
+    font-size: 2.2rem;
+    font-weight: 800;
+}
+
+.carrito-acciones {
+    display: flex;
+    gap: 1rem;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.vaciar-carrito {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    padding: 0.75rem 1.5rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.vaciar-carrito:hover {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0.1));
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+.proceder-pago {
+    background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+    color: white;
+    border: none;
+    padding: 0.75rem 2rem;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    font-size: 1rem;
+    box-shadow: 0 6px 20px rgba(123, 97, 255, 0.4);
+    white-space: nowrap;
+}
+
+.proceder-pago:hover {
+    background: linear-gradient(135deg, #6D4EFF 0%, #5D3EFF 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.6);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .carrito-container {
+        padding: 1rem;
+    }
+    
+    .carrito-title {
+        font-size: 2rem;
+    }
+    
+    .carrito-item {
+        flex-direction: column;
+        text-align: center;
+        gap: 1rem;
+        padding: 1rem;
+    }
+    
+    .item-info {
+        width: 100%;
+    }
+    
+    .total-info {
+        flex-direction: column;
+        gap: 1rem;
+        text-align: center;
+    }
+    
+    .carrito-acciones {
+        justify-content: center;
+    }
+    
+    .vaciar-carrito,
+    .proceder-pago {
+        flex: 1;
+        min-width: 150px;
+    }
+}
+
+@media (max-width: 480px) {
+    .carrito-productos,
+    .carrito-total {
+        padding: 1.5rem;
+    }
+    
+    .carrito-acciones {
+        flex-direction: column;
+    }
+    
+    .vaciar-carrito,
+    .proceder-pago {
+        width: 100%;
+    }
+}
+
+--------------------------------------------------
+📄 src\pages\Carrito\Carrito.jsx
+--------------------------------------------------
+
+import { useCarrito } from '../../context/CarritoContext';
+import './Carrito.css';
+
+function Carrito() {
+    const { carrito, eliminarDelCarrito, vaciarCarrito, calcularTotal } = useCarrito();
+    
+    const total = calcularTotal();
+
+    return (
+        <div className="carrito-container">
+            <h1 className="carrito-title">
+                Carrito de Compras
+            </h1>
+            
+            {carrito.length === 0 ? (
+                <div className="carrito-vacio">
+                    <div className="carrito-vacio-icono">🛒</div>
+                    <h3 className="carrito-vacio-titulo">
+                        Tu carrito está vacío
+                    </h3>
+                    <p className="carrito-vacio-texto">
+                        ¡Explora nuestros productos y agrega algunos artículos increíbles!
+                    </p>
+                </div>
+            ) : (
+                <>
+                    <div className="carrito-productos">
+                        <h2 className="carrito-subtitulo">
+                            Tus Productos ({carrito.length})
+                        </h2>
+                        
+                        {carrito.map((item) => (
+                            <div key={item.carritoId} className="carrito-item">
+                                <div className="item-imagen">
+                                    <img 
+                                        src={item.imagen} 
+                                        alt={item.nombre}
+                                    />
+                                </div>
+                                
+                                <div className="item-info">
+                                    <h3 className="item-nombre">
+                                        {item.nombre}
+                                    </h3>
+                                    <p className="item-precio">
+                                        ${item.precio?.toFixed(2) || '0.00'}
+                                    </p>
+                                </div>
+                                
+                                <button 
+                                    onClick={() => eliminarDelCarrito(item.carritoId)}
+                                    className="item-eliminar"
+                                >
+                                    Eliminar
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="carrito-total">
+                        <div className="total-info">
+                            <h3 className="total-titulo">
+                                Total del Carrito:
+                            </h3>
+                            <span className="total-monto">
+                                ${total.toFixed(2)}
+                            </span>
+                        </div>
+                        
+                        <div className="carrito-acciones">
+                            <button 
+                                onClick={vaciarCarrito}
+                                className="vaciar-carrito"
+                            >
+                                Vaciar Carrito
+                            </button>
+                            
+                            <button className="proceder-pago">
+                                Proceder al Pago
+                            </button>
+                        </div>
+                    </div>
+                </>
+            )}
+        </div>
+    );
+}
+
+export default Carrito;
+
+--------------------------------------------------
+📄 src\pages\Login\Login.css
+--------------------------------------------------
+
+/* 📄 src/pages/Login/Login.css - REEMPLAZAR TODO EL CONTENIDO */
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    padding: 2rem;
+}
+
+.login-card {
+    background: linear-gradient(135deg, rgba(30, 30, 30, 0.9), rgba(26, 26, 26, 0.9));
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 3rem;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.login-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, #7B61FF, transparent);
+}
+
+.login-title {
+    color: #ffffff;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    font-size: 2.5rem;
+    font-weight: 700;
+}
+
+.login-subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.input-group {
+    margin-bottom: 1.5rem;
+}
+
+.login-input {
+    width: 100%;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 12px;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+    font-size: 1rem;
+    outline: none;
+    transition: all 0.3s ease;
+}
+
+.login-input:focus {
+    border: 1px solid #7B61FF;
+    background-color: rgba(255, 255, 255, 0.15);
+    box-shadow: 0 0 0 2px rgba(123, 97, 255, 0.2);
+}
+
+.login-input::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.login-button {
+    width: 100%;
+    background: linear-gradient(135deg, #7B61FF 0%, #6D4EFF 100%);
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1.1rem;
+    transition: all 0.3s ease;
+    box-shadow: 0 6px 20px rgba(123, 97, 255, 0.3);
+}
+
+.login-button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(123, 97, 255, 0.5);
+}
+
+.login-demo {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.demo-text {
+    color: rgba(255, 255, 255, 0.7);
+    margin: 0;
+    font-size: 0.9rem;
+}
+
+--------------------------------------------------
+📄 src\pages\Login\Login.jsx
+--------------------------------------------------
+
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import './Login.css';
+
+function Login({ onLogin }) {
+    const [username, setUsername] = useState('');
+    const [password, setPassword] = useState('');
+    const navigate = useNavigate();
+
+    const handleSubmit = (e) => {
+        e.preventDefault();
+        
+        // Simulación de login - siempre funciona para demo
+        if (username && password) {
+            onLogin(true);
+            navigate('/');
+        }
+    };
+
+    return (
+        <div className="login-container">
+            <div className="login-card">
+                <h1 className="login-title">
+                    🔐 Login
+                </h1>
+                
+                <p className="login-subtitle">
+                    Ingresa a tu cuenta
+                </p>
+
+                <form onSubmit={handleSubmit}>
+                    <div className="input-group">
+                        <input
+                            type="text"
+                            placeholder="Usuario"
+                            value={username}
+                            onChange={(e) => setUsername(e.target.value)}
+                            className="login-input"
+                        />
+                    </div>
+
+                    <div className="input-group">
+                        <input
+                            type="password"
+                            placeholder="Contraseña"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            className="login-input"
+                        />
+                    </div>
+
+                    <button 
+                        type="submit"
+                        className="login-button"
+                    >
+                        Iniciar Sesión
+                    </button>
+                </form>
+
+                <div className="login-demo">
+                    <p className="demo-text">
+                        💡 <strong>Demo:</strong> Cualquier usuario y contraseña funcionan
+                    </p>
+                </div>
+            </div>
+        </div>
+    );
+}
+
+export default Login;
+
+==================================================
+RESUMEN
+==================================================
+Archivos exportados: 34
+Solo código esencial - Sin archivos largos innecesarios
