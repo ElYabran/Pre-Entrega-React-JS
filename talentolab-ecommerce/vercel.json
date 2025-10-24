@@ -1,7 +1,6 @@
 ﻿{
   "version": 2,
-  "buildCommand": "npm install --production=false && npm run build",
+  "buildCommand": "npm run build", 
   "outputDirectory": "dist",
-  "installCommand": "npm install --production=false",
   "framework": "vite"
 }
